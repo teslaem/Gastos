@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Gastos</title>
+<meta name="theme-color" content="#f4f1ea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+    :root {
+        --paper: #f4f1ea;
+        --paper-card: #fffdf8;
+        --ink: #2b2620;
+        --ink-soft: #7a7166;
+        --rule: #ddd6c9;
+        --accent: #b5572b;
+        --accent-soft: #f0d9c8;
+        --good: #4f7a5c;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; }
+    body {
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        padding-bottom: 76px;
+        min-height: 100vh;
+    }
+    .container { max-width: 480px; margin: 0 auto; padding: 18px 16px 8px; }
+
+    h1 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 4px 0 2px;
+    }
+    .subtitle { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 14px; }
+
+    .card {
+        background: var(--paper-card);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 14px;
+    }
+    .card h2 {
+        font-family: Georgia, serif;
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 12px;
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 8px;
+    }
+
+    label { display: block; margin: 12px 0 4px; font-size: 0.8rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+    label:first-of-type { margin-top: 0; }
+    input, select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid var(--rule);
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 1rem;
+        font-family: inherit;
+        appearance: auto;
+    }
+    input[type=number] { font-family: "SF Mono", "Courier New", monospace; font-size: 1.3rem; }
+    input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    button, .btn {
+        display: inline-block;
+        text-align: center;
+        padding: 13px 18px;
+        border-radius: 4px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+        width: 100%;
+        margin-top: 14px;
+        font-family: inherit;
+    }
+    button:active { opacity: 0.82; }
+    .btn-secondary { background: var(--paper-card); color: var(--ink); border: 1px solid var(--rule); }
+    .btn-danger { background: #9c4a3c; }
+
+    .total-row { display: flex; justify-content: space-between; align-items: baseline; }
+    .total-label { color: var(--ink-soft); font-size: 0.85rem; }
+    .total-amount {
+        font-family: "SF Mono", "Courier New", monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+
+    nav {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: var(--paper-card);
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--rule);
+        z-index: 100;
+    }
+    nav button.navbtn {
+        background: none; border: none;
+        color: var(--ink-soft);
+        font-size: 0.75rem;
+        text-align: center;
+        width: auto; margin: 0; padding: 4px 10px;
+        font-family: inherit;
+        display: flex; flex-direction: column; align-items: center; gap: 2px;
+        cursor: pointer;
+    }
+    nav button.navbtn .icon { font-size: 1.2rem; }
+    nav button.navbtn.active { color: var(--accent); font-weight: 700; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 9px 4px; border-bottom: 1px solid var(--rule); }
+    th { color: var(--ink-soft); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    td.monto { font-family: "SF Mono", "Courier New", monospace; color: var(--accent); font-weight: 600; text-align: right; white-space: nowrap; }
+    .desc { color: var(--ink-soft); font-size: 0.78rem; display: block; margin-top: 2px; }
+    .tag {
+        display: inline-block; font-size: 0.7rem;
+        padding: 2px 7px; border-radius: 99px;
+        background: var(--accent-soft); color: var(--accent); font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .empty { color: var(--ink-soft); text-align: center; padding: 24px 0; font-size: 0.9rem; }
+    .msg { font-size: 0.85rem; color: var(--good); margin-top: 8px; min-height: 1.2em; text-align: center; }
+    .msg.error { color: var(--accent); }
+
+    .row-del { text-align: right; }
+    .row-del button { background: none; border: none; color: var(--ink-soft); font-size: 1rem; padding: 4px; width: auto; margin: 0; cursor: pointer; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--ink-soft); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    .install-banner {
+        background: var(--accent-soft);
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        padding: 12px 14px;
+        font-size: 0.85rem;
+        margin-bottom: 14px;
+        display: none;
+    }
+    .install-banner.show { display: block; }
+    .install-banner strong { display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- VISTA: REGISTRAR -->
+    <section class="view active" id="view-registrar">
+        <h1>Gastos</h1>
+        <p class="subtitle" id="label-mes-r">Cargando...</p>
+
+        <div class="install-banner" id="install-banner">
+            <strong>📲 Instalar como app</strong>
+            En Safari: toca el ícono compartir (cuadrito con flecha) → "Agregar a pantalla de inicio".<br>
+            En Chrome Android: menú ⋮ → "Instalar app".
+        </div>
+
+        <div class="card">
+            <h2>Nuevo gasto</h2>
+            <label for="inp-monto">Monto</label>
+            <input type="number" id="inp-monto" step="0.01" min="0.01" inputmode="decimal" placeholder="0.00" required>
+
+            <label for="inp-categoria">Categoría</label>
+            <select id="inp-categoria"></select>
+
+            <label for="inp-desc">Descripción (opcional)</label>
+            <input type="text" id="inp-desc" placeholder="Ej. Tacos, Uber, Luz...">
+
+            <label for="inp-fecha">Fecha</label>
+            <input type="date" id="inp-fecha">
+
+            <button id="btn-guardar">Guardar gasto</button>
+            <div class="msg" id="msg-form"></div>
+        </div>
+
+        <div class="card">
+            <div class="total-row">
+                <span class="total-label">Total acumulado este mes</span>
+                <span class="total-amount" id="total-registrar">$0.00</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- VISTA: GASTOS -->
+    <section class="view" id="view-gastos">
+        <h1>Gastos del mes</h1>
+        <p class="subtitle" id="label-mes-g">Mes en curso</p>
+        <div class="card">
+            <div class="total-row">
+                <span class="total-label">Total</span>
+                <span class="total-amount" id="total-gastos">$0.00</span>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Movimientos</h2>
+            <div id="gastos-empty" class="empty" style="display:none">Sin gastos registrados este mes.</div>
+            <table id="tabla-gastos" style="display:none">
+                <thead><tr><th>Fecha</th><th>Categoría</th><th style="text-align:right">Monto</th><th></th></tr></thead>
+                <tbody id="tbody-gastos"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- VISTA: RESULTADOS -->
+    <section class="view" id="view-resultados">
+        <h1>Resultados</h1>
+        <p class="subtitle" id="label-mes-rs">Mes en curso</p>
+        <div class="card">
+            <div class="total-row">
+                <span class="total-label">Total gastado</span>
+                <span class="total-amount" id="total-resultados">$0.00</span>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Por categoría</h2>
+            <div id="cat-empty" class="empty" style="display:none">Sin datos aún.</div>
+            <canvas id="chart-cat" height="220"></canvas>
+            <div class="legend" id="legend-cat"></div>
+        </div>
+        <div class="card">
+            <h2>Por día</h2>
+            <div id="dia-empty" class="empty" style="display:none">Sin datos aún.</div>
+            <canvas id="chart-dia" height="180"></canvas>
+        </div>
+        <div class="card">
+            <h2>Cerrar mes</h2>
+            <p style="color:var(--ink-soft);font-size:0.85rem;margin-top:0">
+                Archiva los gastos actuales en el historial y reinicia el contador para el siguiente mes.
+            </p>
+            <label for="inp-nombre-mes">Nombre del mes</label>
+            <input type="text" id="inp-nombre-mes" placeholder="Ej. Junio 2026">
+            <button class="btn-danger" id="btn-cerrar-mes">Cerrar mes y reiniciar</button>
+            <div class="msg" id="msg-cerrar"></div>
+        </div>
+        <div class="card">
+            <h2>Respaldo</h2>
+            <p style="color:var(--ink-soft);font-size:0.85rem;margin-top:0">
+                Los datos viven en este navegador/dispositivo. Exporta un respaldo regularmente.
+            </p>
+            <button class="btn-secondary" id="btn-exportar">⬇ Exportar respaldo (JSON)</button>
+            <label for="inp-importar" class="btn btn-secondary" style="margin-top:10px;cursor:pointer">⬆ Importar respaldo</label>
+            <input type="file" id="inp-importar" accept="application/json" style="display:none">
+            <div class="msg" id="msg-backup"></div>
+        </div>
+    </section>
+
+    <!-- VISTA: HISTORIAL -->
+    <section class="view" id="view-historial">
+        <h1>Historial</h1>
+        <p class="subtitle">Meses cerrados</p>
+
+        <div id="historial-lista">
+            <div class="card">
+                <div id="historial-empty" class="empty" style="display:none">Aún no has cerrado ningún mes.</div>
+                <table id="tabla-historial" style="display:none">
+                    <thead><tr><th>Mes</th><th style="text-align:right">Total</th><th></th></tr></thead>
+                    <tbody id="tbody-historial"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="historial-detalle" style="display:none">
+            <div class="card">
+                <h2 id="detalle-titulo"></h2>
+                <canvas id="chart-hist" height="200"></canvas>
+                <div class="legend" id="legend-hist"></div>
+            </div>
+            <div class="card">
+                <h2>Movimientos</h2>
+                <table>
+                    <thead><tr><th>Fecha</th><th>Categoría</th><th style="text-align:right">Monto</th></tr></thead>
+                    <tbody id="tbody-hist-det"></tbody>
+                </table>
+            </div>
+            <button class="btn-secondary" id="btn-back-hist">← Volver al historial</button>
+        </div>
+    </section>
+
+</div><!-- /container -->
+
+<nav>
+    <button class="navbtn active" data-view="registrar"><span class="icon">➕</span>Registrar</button>
+    <button class="navbtn" data-view="gastos"><span class="icon">📋</span>Gastos</button>
+    <button class="navbtn" data-view="resultados"><span class="icon">📊</span>Resultados</button>
+    <button class="navbtn" data-view="historial"><span class="icon">🗂️</span>Historial</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ─── CONFIG ─────────────────────────────────── */
+const CATS = ["Comida","Transporte","Renta/Hogar","Servicios",
+              "Entretenimiento","Salud","Ropa","Deudas","Ahorro","Otros"];
+const PAL  = ['#b5572b','#7a8c6f','#c9a14a','#8a6f8c','#5e8c8a',
+               '#b5847a','#a3a35e','#9c6b6b','#6f8ca0','#b59c7a'];
+
+/* ─── INDEXEDDB ──────────────────────────────── */
+let db;
+
+function openDB() {
+    return new Promise((res, rej) => {
+        const r = indexedDB.open("gastosDB", 1);
+        r.onupgradeneeded = e => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains("gastos"))
+                d.createObjectStore("gastos", { keyPath:"id", autoIncrement:true });
+            if (!d.objectStoreNames.contains("historial"))
+                d.createObjectStore("historial", { keyPath:"id", autoIncrement:true });
+        };
+        r.onsuccess = e => res(e.target.result);
+        r.onerror   = e => rej(e.target.error);
+    });
+}
+
+function dbOp(store, mode, fn) {
+    return new Promise((res, rej) => {
+        const req = fn(db.transaction(store, mode).objectStore(store));
+        req.onsuccess = () => res(req.result);
+        req.onerror   = e => rej(e.target.error);
+    });
+}
+const getAll = s      => dbOp(s, "readonly",  st => st.getAll());
+const addRec = (s, v) => dbOp(s, "readwrite", st => st.add(v));
+const delRec = (s, k) => dbOp(s, "readwrite", st => st.delete(k));
+const clearS = s      => dbOp(s, "readwrite", st => st.clear());
+
+/* ─── HELPERS ────────────────────────────────── */
+const fmt = n => "$" + n.toLocaleString("es-MX", { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function mesLabel() {
+    const MESES = ["enero","febrero","marzo","abril","mayo","junio",
+                   "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    const d = new Date();
+    return MESES[d.getMonth()] + " " + d.getFullYear();
+}
+
+function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function showMsg(id, txt, isError = false, ms = 2000) {
+    const el = document.getElementById(id);
+    el.textContent = txt;
+    el.className = "msg" + (isError ? " error" : "");
+    if (ms) setTimeout(() => { el.textContent = ""; el.className = "msg"; }, ms);
+}
+
+/* ─── NAVEGACIÓN ─────────────────────────────── */
+const VIEWS = ["registrar","gastos","resultados","historial"];
+
+function showView(name) {
+    VIEWS.forEach(v => {
+        document.getElementById("view-" + v).classList.toggle("active", v === name);
+    });
+    document.querySelectorAll(".navbtn").forEach(b =>
+        b.classList.toggle("active", b.dataset.view === name)
+    );
+    if (name === "gastos")     renderGastos();
+    if (name === "resultados") renderResultados();
+    if (name === "historial")  renderHistorial();
+    if (name === "registrar")  renderTotalRegistrar();
+}
+
+document.querySelectorAll(".navbtn").forEach(b =>
+    b.addEventListener("click", () => showView(b.dataset.view))
+);
+
+/* ─── INIT UI ────────────────────────────────── */
+function initUI() {
+    // Fecha hoy
+    document.getElementById("inp-fecha").value = todayISO();
+
+    // Etiqueta del mes en curso
+    const lbl = "Mes en curso · " + mesLabel();
+    ["label-mes-r","label-mes-g","label-mes-rs"].forEach(id =>
+        document.getElementById(id).textContent = lbl
+    );
+
+    // Categorías en select
+    const sel = document.getElementById("inp-categoria");
+    CATS.forEach(c => {
+        const o = document.createElement("option");
+        o.value = o.textContent = c;
+        sel.appendChild(o);
+    });
+
+    // Banner install
+    const standalone = window.matchMedia("(display-mode: standalone)").matches
+                    || window.navigator.standalone;
+    if (!standalone) document.getElementById("install-banner").classList.add("show");
+}
+
+/* ─── REGISTRAR ──────────────────────────────── */
+async function renderTotalRegistrar() {
+    const gs = await getAll("gastos");
+    document.getElementById("total-registrar").textContent =
+        fmt(gs.reduce((a, g) => a + g.monto, 0));
+}
+
+document.getElementById("btn-guardar").addEventListener("click", async () => {
+    const monto = parseFloat(document.getElementById("inp-monto").value);
+    const cat   = document.getElementById("inp-categoria").value;
+    const desc  = document.getElementById("inp-desc").value.trim();
+    const fecha = document.getElementById("inp-fecha").value;
+
+    if (!monto || monto <= 0)  return showMsg("msg-form", "❌ Ingresa un monto válido", true);
+    if (!fecha)                return showMsg("msg-form", "❌ Selecciona una fecha", true);
+
+    await addRec("gastos", { fecha, categoria: cat, descripcion: desc, monto, creado: new Date().toISOString() });
+
+    document.getElementById("inp-monto").value = "";
+    document.getElementById("inp-desc").value  = "";
+    document.getElementById("inp-monto").focus();
+    showMsg("msg-form", "✅ Gasto guardado");
+    renderTotalRegistrar();
+});
+
+// Submit con Enter en monto
+document.getElementById("inp-monto").addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("btn-guardar").click();
+});
+
+/* ─── GASTOS (lista) ─────────────────────────── */
+async function renderGastos() {
+    const gs = await getAll("gastos");
+    gs.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id);
+
+    const total = gs.reduce((a, g) => a + g.monto, 0);
+    document.getElementById("total-gastos").textContent = fmt(total);
+
+    const empty = document.getElementById("gastos-empty");
+    const tabla = document.getElementById("tabla-gastos");
+    const tbody = document.getElementById("tbody-gastos");
+
+    tbody.innerHTML = "";
+    empty.style.display = gs.length ? "none" : "block";
+    tabla.style.display = gs.length ? "table" : "none";
+
+    gs.forEach(g => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${g.fecha}${g.descripcion ? `<span class="desc">${esc(g.descripcion)}</span>` : ""}</td>
+            <td><span class="tag">${esc(g.categoria)}</span></td>
+            <td class="monto">${fmt(g.monto)}</td>
+            <td class="row-del"><button data-id="${g.id}">🗑️</button></td>`;
+        tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll(".row-del button").forEach(btn =>
+        btn.addEventListener("click", async () => {
+            if (!confirm("¿Eliminar este gasto?")) return;
+            await delRec("gastos", parseInt(btn.dataset.id));
+            renderGastos();
+        })
+    );
+}
+
+/* ─── RESULTADOS ─────────────────────────────── */
+let chartCat, chartDia;
+
+async function renderResultados() {
+    const gs = await getAll("gastos");
+    const total = gs.reduce((a, g) => a + g.monto, 0);
+    document.getElementById("total-resultados").textContent = fmt(total);
+
+    // Por categoría
+    const byCat = {};
+    gs.forEach(g => { byCat[g.categoria] = (byCat[g.categoria] || 0) + g.monto; });
+    const catL = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
+    const catV = catL.map(l => +byCat[l].toFixed(2));
+
+    const catEmpty = document.getElementById("cat-empty");
+    catEmpty.style.display = catL.length ? "none" : "block";
+
+    if (chartCat) chartCat.destroy();
+    if (catL.length) {
+        chartCat = new Chart(document.getElementById("chart-cat"), {
+            type: "doughnut",
+            data: { labels: catL, datasets: [{ data: catV, backgroundColor: PAL, borderWidth: 0 }] },
+            options: { plugins: { legend: { display: false } } }
+        });
+    }
+    buildLegend("legend-cat", catL, catV);
+
+    // Por día
+    const byDay = {};
+    gs.forEach(g => { byDay[g.fecha] = (byDay[g.fecha] || 0) + g.monto; });
+    const dayL = Object.keys(byDay).sort();
+    const dayV = dayL.map(l => +byDay[l].toFixed(2));
+
+    const diaEmpty = document.getElementById("dia-empty");
+    diaEmpty.style.display = dayL.length ? "none" : "block";
+
+    if (chartDia) chartDia.destroy();
+    if (dayL.length) {
+        chartDia = new Chart(document.getElementById("chart-dia"), {
+            type: "bar",
+            data: {
+                labels: dayL.map(d => d.slice(5)),
+                datasets: [{ data: dayV, backgroundColor: "#b5572b", borderRadius: 3 }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: "#7a7166", font: { size: 9 } }, grid: { display: false } },
+                    y: { ticks: { color: "#7a7166" }, grid: { color: "#ddd6c9" } }
+                }
+            }
+        });
+    }
+}
+
+function buildLegend(elId, labels, values) {
+    const el = document.getElementById(elId);
+    el.innerHTML = "";
+    labels.forEach((lbl, i) => {
+        const item = document.createElement("div");
+        item.className = "legend-item";
+        item.innerHTML = `<span class="legend-dot" style="background:${PAL[i % PAL.length]}"></span>${esc(lbl)} — ${fmt(values[i])}`;
+        el.appendChild(item);
+    });
+}
+
+/* ─── CERRAR MES ─────────────────────────────── */
+document.getElementById("btn-cerrar-mes").addEventListener("click", async () => {
+    const nombre = document.getElementById("inp-nombre-mes").value.trim();
+    if (!nombre) return showMsg("msg-cerrar", "❌ Escribe el nombre del mes", true);
+    if (!confirm(`¿Cerrar "${nombre}" y reiniciar? Esta acción no se puede deshacer.`)) return;
+
+    const gs    = await getAll("gastos");
+    const total = gs.reduce((a, g) => a + g.monto, 0);
+
+    await addRec("historial", {
+        mes: nombre,
+        total: +total.toFixed(2),
+        cerrado: new Date().toISOString(),
+        gastos: gs.map(({ id, ...rest }) => rest)
+    });
+
+    await clearS("gastos");
+    document.getElementById("inp-nombre-mes").value = "";
+    showMsg("msg-cerrar", "✅ Mes archivado. ¡Listo para el siguiente!", false, 3000);
+    renderResultados();
+});
+
+/* ─── RESPALDO EXPORTAR ──────────────────────── */
+document.getElementById("btn-exportar").addEventListener("click", async () => {
+    const gastos    = await getAll("gastos");
+    const historial = await getAll("historial");
+    const blob = new Blob(
+        [JSON.stringify({ exportado: new Date().toISOString(), gastos, historial }, null, 2)],
+        { type: "application/json" }
+    );
+    const a = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(blob),
+        download: `gastos_backup_${todayISO()}.json`
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    showMsg("msg-backup", "✅ Respaldo descargado");
+});
+
+/* ─── RESPALDO IMPORTAR ──────────────────────── */
+document.getElementById("inp-importar").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        const data = JSON.parse(await file.text());
+        if (!confirm("Importar reemplazará TODOS los datos actuales. ¿Continuar?")) return;
+        await clearS("gastos");
+        await clearS("historial");
+        for (const g of (data.gastos || []))    { const { id, ...r } = g; await addRec("gastos", r); }
+        for (const m of (data.historial || [])) { const { id, ...r } = m; await addRec("historial", r); }
+        showMsg("msg-backup", "✅ Datos importados correctamente");
+        renderResultados();
+        renderTotalRegistrar();
+    } catch {
+        showMsg("msg-backup", "❌ Archivo inválido", true);
+    }
+    e.target.value = "";
+});
+
+/* ─── HISTORIAL ──────────────────────────────── */
+async function renderHistorial() {
+    document.getElementById("historial-lista").style.display   = "block";
+    document.getElementById("historial-detalle").style.display = "none";
+
+    const meses = await getAll("historial");
+    meses.sort((a, b) => b.cerrado.localeCompare(a.cerrado));
+
+    const empty = document.getElementById("historial-empty");
+    const tabla = document.getElementById("tabla-historial");
+    const tbody = document.getElementById("tbody-historial");
+
+    tbody.innerHTML = "";
+    empty.style.display = meses.length ? "none" : "block";
+    tabla.style.display = meses.length ? "table" : "none";
+
+    meses.forEach(m => {
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.innerHTML = `<td>${esc(m.mes)}<span class="desc">${m.cerrado.slice(0,10)}</span></td>
+                        <td class="monto">${fmt(m.total)}</td><td style="color:var(--ink-soft)">›</td>`;
+        tr.addEventListener("click", () => showDetalle(m));
+        tbody.appendChild(tr);
+    });
+}
+
+let chartHist;
+function showDetalle(mes) {
+    document.getElementById("historial-lista").style.display   = "none";
+    document.getElementById("historial-detalle").style.display = "block";
+    document.getElementById("detalle-titulo").textContent = mes.mes + " — " + fmt(mes.total);
+
+    // Tabla detalle
+    const tbody = document.getElementById("tbody-hist-det");
+    tbody.innerHTML = "";
+    const gs = (mes.gastos || []).slice().sort((a,b) => b.fecha.localeCompare(a.fecha));
+    gs.forEach(g => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${g.fecha}${g.descripcion ? `<span class="desc">${esc(g.descripcion)}</span>` : ""}</td>
+                        <td><span class="tag">${esc(g.categoria)}</span></td>
+                        <td class="monto">${fmt(g.monto)}</td>`;
+        tbody.appendChild(tr);
+    });
+
+    // Gráfica categorías
+    const byCat = {};
+    gs.forEach(g => { byCat[g.categoria] = (byCat[g.categoria]||0) + g.monto; });
+    const catL = Object.keys(byCat).sort((a,b) => byCat[b]-byCat[a]);
+    const catV = catL.map(l => +byCat[l].toFixed(2));
+
+    if (chartHist) chartHist.destroy();
+    chartHist = new Chart(document.getElementById("chart-hist"), {
+        type: "doughnut",
+        data: { labels: catL, datasets: [{ data: catV, backgroundColor: PAL, borderWidth: 0 }] },
+        options: { plugins: { legend: { display: false } } }
+    });
+    buildLegend("legend-hist", catL, catV);
+}
+
+document.getElementById("btn-back-hist").addEventListener("click", renderHistorial);
+
+/* ─── SERVICE WORKER ─────────────────────────── */
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
+/* ─── ARRANQUE ───────────────────────────────── */
+(async () => {
+    db = await openDB();
+    initUI();
+    renderTotalRegistrar();
+})();
+</script>
+</body>
+</html>
